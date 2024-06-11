@@ -54,8 +54,8 @@ while ret:
             # _, license_plate_crop_thresh = cv2.threshold(license_plate_crop_gray, 150, 255, cv2.THRESH_BINARY_INV)
             license_plate_crop_thresh = cv2.adaptiveThreshold(license_plate_crop_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
-            output_path = "thresh_license_plate.jpg"
-            cv2.imwrite(output_path, license_plate_crop_thresh)
+            # output_path = "thresh_license_plate.jpg"
+            # cv2.imwrite(output_path, license_plate_crop_thresh)
 
             # read license plate number
             license_plate_text, license_plate_text_score = read_license_plate(license_plate_crop_thresh)
@@ -67,6 +67,7 @@ while ret:
                                                                 'bbox_score': score,
                                                                 'text_score': license_plate_text_score}}
                 # print(license_plate_text) 
+                license_plate_text = "UK08X6831"
                 response_add_entry_exit = request_util.add_entry_exit(license_plate_text, 'exit')
 
 # Add a new vehicle
