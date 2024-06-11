@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Tracking System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Vehicle Tracking System</h1>
+
+        <h2>Recent Activities</h2>
+        <div id="recentActivities"></div>
+        <div id="recentPaginationControls"></div>
+        <button type="button" onclick="getRecentActivities()">Load Recent Activities</button>
+
+        <h2>Add New Vehicle</h2>
+        <form id="addVehicleForm">
+            <label for="licensePlate">License Plate:</label>
+            <input type="text" id="licensePlate" name="licensePlate"><br><br>
+
+            <button type="button" onclick="addVehicle()">Add Vehicle</button>
+        </form>
+
+        <h2>Vehicle Activity</h2>
+        <label for="licensePlateActivity">Enter License Plate:</label>
+        <input type="text" id="licensePlateActivity" name="licensePlateActivity">
+        <button type="button" onclick="getVehicleActivity()">Get Activity</button>
+
+        <div id="activityResults"></div>
+        <div id="paginationControls"></div>
+        <div id="finalStatus"></div>
+    </div>
+
+    <script>
+        var currentPage = 1;
+
+        function addVehicle() {
+            var licensePlate = document.getElementById("licensePlate").value;
+
+            var data = {
+                "license_plate": licensePlate
+            };
+
+            fetch('/vehicles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Vehicle added successfully.");
+                    document.getElementById("addVehicleForm").reset(); // Clear the form
+                } else {
+                    alert("Failed to add vehicle.");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function getVehicleActivity(page = 1) {
+            var licensePlate = document.getElementById("licensePlateActivity").value;
+
+            fetch(`/vehicles/activity/${licensePlate}?page=${page}`)
+            .then(response => response.json())
+            .then(data => {
+                var activityResults = document.getElementById("activityResults");
+                var paginationControls = document.getElementById("paginationControls");
+                var finalStatus = document.getElementById("finalStatus");
+                activityResults.innerHTML = ""; // Clear previous results
+                finalStatus.innerHTML = ""; // Clear previous final status
+                paginationControls.innerHTML = ""; // Clear previous pagination controls
+
+                if (data.error) {
+                    activityResults.innerHTML = data.error;
+                } else {
+                    var activity = data.vehicle_activity;
+                    var tableHTML = "<table><tr><th>Entry Time</th><th>Exit Time</th></tr>";
+
+                    activity.forEach(function(entry) {
+                        var exitTime = entry.exit_time ? entry.exit_time : 'N/A';
+                        tableHTML += "<tr><td>" + entry.entry_time + "</td><td>" + exitTime + "</td></tr>";
+                    });
+
+                    tableHTML += "</table>";
+                    activityResults.innerHTML = tableHTML;
+
+                    // Pagination controls
+                    if (data.total_pages > 1) {
+                        if (page > 1) {
+                            paginationControls.innerHTML += `<button onclick="getVehicleActivity(${page - 1})">Previous</button>`;
+                        }
+                        if (page < data.total_pages) {
+                            paginationControls.innerHTML += `<button onclick="getVehicleActivity(${page + 1})">Next</button>`;
+                        }
+                    }
+
+                    // Get the last entry to determine final status
+                    var lastEntry = activity[activity.length - 1];
+                    var finalStatusText = lastEntry.status == 'inside' ? 'Inside' : 'Outside';
+                    finalStatus.innerHTML = "<p>Status: " + finalStatusText + "</p>";
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+
+
+
+        var recentPage = 1;
+
+        function getRecentActivities(page = 1) {
+            recentPage = page;
+            fetch(`/recent_activities?page=${page}`)
+            .then(response => response.json())
+            .then(data => {
+                var recentActivities = document.getElementById("recentActivities");
+                var recentPaginationControls = document.getElementById("recentPaginationControls");
+                recentActivities.innerHTML = ""; // Clear previous results
+                recentPaginationControls.innerHTML = ""; // Clear previous pagination controls
+
+                if (data.error) {
+                    recentActivities.innerHTML = data.error;
+                } else {
+                    var activities = data.activities;
+                    var tableHTML = "<table><tr><th>License Plate</th><th>Entry Time</th><th>Exit Time</th></tr>";
+
+                    activities.forEach(function(activity) {
+                        var exitTime = activity.exit_time ? activity.exit_time : 'N/A';
+                        tableHTML += "<tr><td>" + activity.license_plate + "</td><td>" + activity.entry_time + "</td><td>" + exitTime + "</td></tr>";
+                    });
+
+                    tableHTML += "</table>";
+                    recentActivities.innerHTML = tableHTML;
+
+                    // Pagination controls
+                    if (data.total_pages > 1) {
+                        if (page > 1) {
+                            recentPaginationControls.innerHTML += `<button onclick="getRecentActivities(${page - 1})">Previous</button>`;
+                        }
+                        if (page < data.total_pages) {
+                            recentPaginationControls.innerHTML += `<button onclick="getRecentActivities(${page + 1})">Next</button>`;
+                        }
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
